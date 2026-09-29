@@ -275,6 +275,9 @@
    MODULE SETTINGS — edit this list to add or change tools.
    url:  the tool's address ("" = not ready yet)
    mode: "embed"  -> shows the tool inside the portal window
+         "newtab" -> clicking the module opens the tool straight away
+                     in a new browser tab (use when a tool blocks
+                     embedding, e.g. Google Apps Script)
          "launch" -> opens in a new tab (use for SharePoint /
                      Microsoft 365, which block embedding)
    name / short / desc: text in English (en), Azerbaijani (az), Russian (ru)
@@ -307,7 +310,7 @@ const MODULES = [
   {
     id: "recruitment",
     url: "https://script.google.com/macros/s/AKfycbxHPJBd5Bi457BiOVE-CN-xr9gnHrM9kSvjvhzMfj2dXKguE5ldceBFK9mBQGsM_GU0_g/exec",
-    mode: "embed",
+    mode: "newtab",
     color: "var(--seg-recruit)", text: "var(--ink)",
     name:  { en: "Recruitment", az: "İşə qəbul", ru: "Подбор персонала" },
     short: { en: "Recruitment", az: "İşə qəbul", ru: "Подбор" },
@@ -339,7 +342,7 @@ const LANGS = [
 
 const T = {
   en: {
-    home: "Home", soon: "Soon", comingSoon: "Coming soon", open: "Open", sharepoint: "SharePoint",
+    home: "Home", soon: "Soon", comingSoon: "Coming soon", open: "Open", sharepoint: "SharePoint", newtabLabel: "New tab",
     team: "Learning & Development", menu: "Open menu", back: "Back to home",
     heroMark: "Every skill", heroRest: " you grow at Mars Overseas, in one place",
     heroText: "Take courses, follow your training plan, manage hiring and get quick answers from our AI assistant — all from MARS Talent Wise.",
@@ -351,10 +354,11 @@ const T = {
     emptyText: "This tool will open here as soon as it is ready. Until then, contact the Learning & Development team with any questions.",
     launchTitle: "Your courses open in SharePoint",
     launchText: "Microsoft 365 keeps the LMS in its own secure tab. Sign in with your Mars Overseas account if asked, then keep this portal open to come back to your other tools.",
-    launchBtn: "Open the LMS", backHome: "Back to home"
+    launchBtn: "Open the LMS", backHome: "Back to home",
+    ntTitle: n => `${n} opens in a new tab`, ntText: "Sign in on the page that opens. Keep this portal open to come back to your other tools.", ntBtn: n => `Open ${n}`
   },
   az: {
-    home: "Ana səhifə", soon: "Tezliklə", comingSoon: "Tezliklə", open: "Aç", sharepoint: "SharePoint",
+    home: "Ana səhifə", soon: "Tezliklə", comingSoon: "Tezliklə", open: "Aç", sharepoint: "SharePoint", newtabLabel: "Yeni tabda",
     team: "Təlim və İnkişaf", menu: "Menyunu aç", back: "Ana səhifəyə qayıt",
     heroMark: "İnkişafınız üçün", heroRest: " hər şey bir yerdə",
     heroText: "Kurslar keçin, təlim planınızı izləyin, işə qəbulu idarə edin və Sİ köməkçisindən sürətli cavablar alın — hamısı MARS Talent Wise-da.",
@@ -366,10 +370,11 @@ const T = {
     emptyText: "Bu alət hazır olan kimi burada açılacaq. Hələlik suallarınız üçün Təlim və İnkişaf komandası ilə əlaqə saxlayın.",
     launchTitle: "Kurslarınız SharePoint-də açılır",
     launchText: "Microsoft 365 LMS-i ayrıca təhlükəsiz tabda açır. Tələb olunarsa, Mars Overseas hesabınızla daxil olun və digər alətlərə qayıtmaq üçün bu portalı açıq saxlayın.",
-    launchBtn: "LMS-i aç", backHome: "Ana səhifəyə qayıt"
+    launchBtn: "LMS-i aç", backHome: "Ana səhifəyə qayıt",
+    ntTitle: n => `${n} yeni tabda açılır`, ntText: "Açılan səhifədə daxil olun. Digər alətlərə qayıtmaq üçün bu portalı açıq saxlayın.", ntBtn: n => `${n} bölməsini aç`
   },
   ru: {
-    home: "Главная", soon: "Скоро", comingSoon: "Скоро", open: "Открыть", sharepoint: "SharePoint",
+    home: "Главная", soon: "Скоро", comingSoon: "Скоро", open: "Открыть", sharepoint: "SharePoint", newtabLabel: "Новая вкладка",
     team: "Обучение и развитие", menu: "Открыть меню", back: "На главную",
     heroMark: "Всё для вашего развития", heroRest: " в одном месте",
     heroText: "Проходите курсы, следите за планом обучения, управляйте подбором и получайте быстрые ответы от ИИ-ассистента — всё в MARS Talent Wise.",
@@ -381,7 +386,8 @@ const T = {
     emptyText: "Инструмент откроется здесь, как только будет готов. Пока по всем вопросам обращайтесь в команду обучения и развития.",
     launchTitle: "Ваши курсы открываются в SharePoint",
     launchText: "Microsoft 365 открывает LMS в отдельной защищённой вкладке. При необходимости войдите в учётную запись Mars Overseas и не закрывайте портал, чтобы вернуться к другим инструментам.",
-    launchBtn: "Открыть LMS", backHome: "На главную"
+    launchBtn: "Открыть LMS", backHome: "На главную",
+    ntTitle: n => `Раздел «${n}» открывается в новой вкладке`, ntText: "Войдите на открывшейся странице. Не закрывайте портал, чтобы вернуться к другим инструментам.", ntBtn: n => `Открыть «${n}»`
   }
 };
 
@@ -431,13 +437,20 @@ const menuBtn = document.getElementById("menuBtn");
 
 function stateLabel(m) {
   if (!m.url) return t("comingSoon");
+  if (m.mode === "newtab") return t("newtabLabel");
   return m.mode === "launch" ? t("sharepoint") : t("open");
+}
+
+function linkAttrs(m) {
+  return m.mode === "newtab" && m.url
+    ? `href="${m.url}" target="_blank" rel="noopener"`
+    : `href="#/${m.id}"`;
 }
 
 function renderNav(active) {
   const home = `<a href="#/" ${active === "home" ? 'aria-current="page"' : ""}><span class="dot" style="--c:var(--ink)"></span>${t("home")}</a>`;
   nav.innerHTML = home + MODULES.map(m => `
-    <a href="#/${m.id}" ${active === m.id ? 'aria-current="page"' : ""}>
+    <a ${linkAttrs(m)} ${active === m.id ? 'aria-current="page"' : ""}>
       <span class="dot" style="--c:${m.color}"></span>${L(m.short)}
       ${m.url ? "" : `<span class="soon">${t("soon")}</span>`}
     </a>`).join("");
@@ -453,7 +466,7 @@ function renderHome() {
 
     <div class="capsule" role="list">
       ${MODULES.map(m => `
-        <a class="seg" role="listitem" href="#/${m.id}" style="--c:${m.color};--t:${m.text}" ${m.url ? "" : "data-empty"}>
+        <a class="seg" role="listitem" ${linkAttrs(m)} style="--c:${m.color};--t:${m.text}" ${m.url ? "" : "data-empty"}>
           ${icon(m.icon, 44)}
           <div class="text">
             <h2>${L(m.name)}</h2>
@@ -493,6 +506,13 @@ function renderModule(m) {
       <h2>${T[lang].emptyTitle(name)}</h2>
       <p>${t("emptyText")}</p>
       <a class="btn" href="#/">${t("backHome")}</a>
+    </div>`;
+  } else if (m.mode === "newtab") {
+    body = `<div class="panel">
+      <div class="shape"></div>
+      <h2>${T[lang].ntTitle(name)}</h2>
+      <p>${t("ntText")}</p>
+      <a class="btn primary" href="${m.url}" target="_blank" rel="noopener">${icon(ICON_EXT, 16)}${T[lang].ntBtn(name)}</a>
     </div>`;
   } else if (m.mode === "launch") {
     body = `<div class="panel">
